@@ -1,0 +1,10 @@
+[requires]
+glew/2.1.0@bincrafters/stable
+glfw/3.3@bincrafters/stable
+
+[generators]
+cmake
+
+[options]
+glew:shared = True
+glfw:shared = True
