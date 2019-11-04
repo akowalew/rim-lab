@@ -10,11 +10,13 @@ find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 
 add_executable(rim-lab
-    src/main.cu
+    src/main.cpp
+    src/fractals.cu
 )
 
 target_include_directories(rim-lab
     PRIVATE
+        ${CMAKE_SOURCE_DIR}/include
         ${GLUT_INCLUDE_DIRS}
 )
 
