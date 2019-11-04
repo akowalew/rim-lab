@@ -2,15 +2,19 @@
 #include <cmath>
 
 #include <cuda_runtime.h>
-#include "helper_cuda.h"
 
 #include <GL/glut.h>
+
+#include "helper_cuda.h"
+#include "helper_timer.h"
 
 constexpr auto cr = -0.123;
 constexpr auto ci = 0.745;
 
 constexpr auto DIM = 1000; /* rozmiar rysunku w pikselach */
 constexpr auto DIM_BLOCK = 16;
+
+StopWatchInterface* timer = NULL;
 
 __forceinline__ __device__ int julia(float x, float y)
 {
@@ -41,7 +45,6 @@ __global__ void kernel(unsigned char *ptr,
 {
     const int xw = blockIdx.x * blockDim.x + threadIdx.x;
     const int yw = blockIdx.y * blockDim.y + threadIdx.y;
-
     if(xw > DIM || yw > DIM)
     {
         return;
@@ -81,9 +84,15 @@ static void recompute(void)
     const auto dim_grid = dim3{dim_grid_x, dim_grid_y};
     const auto dim_block = dim3{DIM_BLOCK, DIM_BLOCK};
 
+    sdkStartTimer(&timer);
+
     kernel<<<dim_grid, dim_block>>>(d_pixbuf, dx, dy, scale);
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaMemcpy(pixbuf, d_pixbuf, sizeof(pixbuf), cudaMemcpyDeviceToHost));
+
+    sdkStopTimer(&timer);
+    printf("Processing time: %f ms\n", sdkGetTimerValue(&timer));
+    sdkResetTimer(&timer);
 
     glutPostRedisplay();
 }
@@ -125,6 +134,7 @@ int main(int argc, char *argv[])
 {
     checkCudaErrors(cudaSetDevice(0));
     checkCudaErrors(cudaMalloc(&d_pixbuf, 4 * DIM * DIM));
+    sdkCreateTimer(&timer);
 
     glutInit(&argc, argv); /* inicjacja biblioteki GLUT */
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA); /* opcje */
@@ -135,6 +145,7 @@ int main(int argc, char *argv[])
     recompute(); /* obliczenie pierwszego rysunku */
     glutMainLoop(); /* główna pętla obsługi zdarzeń */
 
+    sdkDeleteTimer(&timer);
     checkCudaErrors(cudaFree(d_pixbuf));
     checkCudaErrors(cudaDeviceReset());
 }
