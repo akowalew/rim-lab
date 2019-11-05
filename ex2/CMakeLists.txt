@@ -18,4 +18,5 @@ target_include_directories(ex2
 )
 
 configure_file(scripts/testfir.m testfir.m COPYONLY)
+configure_file(scripts/audiofir.m audiofir.m COPYONLY)
 
