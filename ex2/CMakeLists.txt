@@ -16,3 +16,6 @@ target_include_directories(ex2
     PRIVATE
         include
 )
+
+configure_file(scripts/testfir.m testfir.m COPYONLY)
+
