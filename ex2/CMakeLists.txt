@@ -8,5 +8,11 @@
 ###############################################################################
 
 add_executable(ex2
+    src/audiofir0.cpp
     src/main.cpp
+)
+
+target_include_directories(ex2
+    PRIVATE
+        include
 )
