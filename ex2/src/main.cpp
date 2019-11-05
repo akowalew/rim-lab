@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
     read_data(&n, &len, &coeff, &yin, &yref, &yout);
 
     timer(&start);
-    audiofir(yout, yin, coeff, n, len, argc, argv);
+    audiofir(yout, yin, coeff, n, len);
     timer(&stop);
     elapsed_time(start, stop, 2*((double)n+1) * 2*((double)len));
 
