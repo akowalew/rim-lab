@@ -5,6 +5,8 @@
 #include <helper_cuda.h>
 
 static constexpr int N = 1024; // maksymalny rząd filtru FIR 
+static constexpr int K = 512; // Ilość wątków w bloku
+
 __constant__ static float fir_coeff[N + 1];
 
 __global__
@@ -12,8 +14,19 @@ static void audiofir_kernel(float *yout, const float *yin, int n)
 {
     assert(yout != nullptr);
     assert(yin != nullptr);
+	assert(n <= N);
+	assert(threadIdx.x < K);
+
+	__shared__ float ytile[N + K];
 
     const int i = threadIdx.x + blockIdx.x * blockDim.x;
+	for (int j = i; j >= (i - n); j -= K)
+	{
+		ytile[j] = yin[i];
+	}
+
+
+
 	yin += i;
 	yout += i;
 
@@ -39,7 +52,6 @@ void audiofir(float *yout, const float *yin,
     float* d_yout;
     float* d_yin;
 
-    static constexpr int K = 512;
     const unsigned int len_1 = (K * ((len + K - 1) / K));
 
     checkCudaErrors(cudaMalloc(&d_yout, sizeof(float) * 2 * len_1));
