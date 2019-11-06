@@ -5,7 +5,7 @@ function [yorg, yin, yref, Fs] = audiofir(file)
     assert(Fs == 44100);
     assert(size(yorg, 2) == 2);
 
-    %% zakłócenie sygnału szumem i przydźwiękiem sieciowym
+    % zakłócenie sygnału szumem i przydźwiękiem sieciowym
     noise = filter(fir1(128, 11000/(Fs/2), 'high',...
                         blackmanharris(129)), 1,...
                         randn(size(yorg))); % szum w.cz.
@@ -25,7 +25,6 @@ function [yorg, yin, yref, Fs] = audiofir(file)
     f = fopen('audiofir_in.dat', 'wb');
     fwrite(f, [n, len], 'int');
     fwrite(f, coeff, 'single');
-    fwrite(f, yin,
-    'single');
+    fwrite(f, yin, 'single');
     fwrite(f, yref, 'single');
     fclose(f);

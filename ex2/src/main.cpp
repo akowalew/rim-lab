@@ -1,3 +1,7 @@
+#ifdef _MSC_VER 
+# define _CRT_SECURE_NO_WARNINGS 
+#endif
+
 #include <cmath>
 #include <cstdio>
 #include <ctime>
@@ -60,17 +64,17 @@ void audiocmp(float *yout, float *yref, int len)
     printf("max. abs. err. = %.1e\n", e);
 }
 
-using app_timer_t = timespec;
-
-#define timer(t_ptr) clock_gettime(CLOCK_MONOTONIC, t_ptr)
-
+#define WINDOWS_LEAN_AND_MEAN 
+#include <windows.h>
+typedef LARGE_INTEGER app_timer_t;
+#define timer(t_ptr) QueryPerformanceCounter(t_ptr)
 void elapsed_time(app_timer_t start, app_timer_t stop, double flop)
-{
-    const auto sec_diff = (stop.tv_sec - start.tv_sec);
-    const auto nsec_diff = (stop.tv_nsec - start.tv_nsec);
-    const auto etime = 1e+3 * sec_diff + 1e-6 * nsec_diff;
-    printf("CPU (total!) time = %.3f ms (%6.3f GFLOP/s)\n",
-        etime, 1e-6 * flop / etime);
+{ 
+	double etime; 
+	LARGE_INTEGER clk_freq; 
+	QueryPerformanceFrequency(&clk_freq); 
+	etime = (stop.QuadPart - start.QuadPart) / (double)clk_freq.QuadPart; 
+	printf("CPU (total!) time = %.3f ms (%6.3f GFLOP/s)\n", etime * 1e3, 1e-9 * flop / etime); 
 }
 
 int main(int argc, char *argv[])

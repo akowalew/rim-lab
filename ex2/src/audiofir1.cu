@@ -5,8 +5,7 @@
 #include <helper_cuda.h>
 
 __global__
-static void audiofir_kernel(float *yout, float *yin,
-    float *coeff, int n, int len)
+static void audiofir_kernel(float* yout, float* yin, float* coeff, int n, int len)
 {
     assert(yout != nullptr);
     assert(yin != nullptr);
@@ -14,14 +13,14 @@ static void audiofir_kernel(float *yout, float *yin,
     assert(n < len);
 
     const int i = threadIdx.x + blockIdx.x * blockDim.x;
-    if(i < len)
+    if(i >= len)
     {
         return;
     }
 
-    auto j = i;
-    auto sum = 0.0f;
-    for(auto k = 0; k <= n; ++k, --j)
+    int j = i;
+    float sum = 0.0f;
+    for(unsigned int k = 0; k <= n; ++k, --j)
     {
         if(j < 0)
         {
@@ -41,9 +40,9 @@ void audiofir(float *yout, float *yin,
 {
     checkCudaErrors(cudaSetDevice(0));
 
-    float* d_yout;
-    float* d_yin;
-    float* d_coeff;
+    float* d_yout = nullptr;
+    float* d_yin = nullptr;
+    float* d_coeff = nullptr;
 
     checkCudaErrors(cudaMalloc(&d_yout, sizeof(float) * 2 * len));
     checkCudaErrors(cudaMalloc(&d_yin, sizeof(float) * 2 * len));
@@ -61,10 +60,16 @@ void audiofir(float *yout, float *yin,
     checkCudaErrors(cudaEventCreate(&stop));
     checkCudaErrors(cudaEventRecord(start, 0));
 
-    constexpr auto K = 512;
+	constexpr int K = 512;
     audiofir_kernel<<<(len + K - 1) / K, K>>>(d_yout, d_yin, d_coeff, n, len);
+
+	checkCudaErrors(cudaDeviceSynchronize());
+	checkCudaErrors(cudaGetLastError());
+
     audiofir_kernel<<<(len + K - 1) / K, K>>>(d_yout+len, d_yin+len, d_coeff, n, len);
-    checkCudaErrors(cudaGetLastError());
+
+	checkCudaErrors(cudaDeviceSynchronize());
+	checkCudaErrors(cudaGetLastError());
 
     checkCudaErrors(cudaEventRecord(stop, 0));
     checkCudaErrors(cudaEventSynchronize(stop));
@@ -74,7 +79,6 @@ void audiofir(float *yout, float *yin,
     checkCudaErrors(cudaEventDestroy(start));
     checkCudaErrors(cudaEventDestroy(stop));
 
-    checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors(cudaMemcpy(yout, d_yout, sizeof(float) * 2 * len, cudaMemcpyDeviceToHost));
 
     checkCudaErrors(cudaFree(d_yin));
