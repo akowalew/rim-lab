@@ -8,8 +8,7 @@
 ###############################################################################
 
 add_executable(ex2
-#    src/audiofir0.cpp
-    src/audiofir1.cu
+    src/audiofir.cpp
     src/main.cpp
 )
 
