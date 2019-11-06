@@ -17,9 +17,9 @@ void alloc_mem(int n, int len,
 void free_mem(float *coeff_ptr, float *yin_ptr, float *yref_ptr, float *yout_ptr)
 {
     free(coeff_ptr);
-    free( yin_ptr);
-    free( yref_ptr);
-    free( yout_ptr);
+    free(yin_ptr);
+    free(yref_ptr);
+    free(yout_ptr);
 }
 
 void read_data(int *n_ptr, int *len_ptr,
