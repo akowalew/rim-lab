@@ -1,4 +1,4 @@
 #pragma once
 
-void audiofir(float *yout, float *yin,
-    float *coeff, int n, int len);
+void audiofir(float *yout, const float *yin,
+    const float *coeff, int n, int len);
