@@ -4,17 +4,16 @@
 
 #include <helper_cuda.h>
 
-static constexpr int N = 1024; // maksymalny rząd filtru FIR
+static constexpr int N = 1024; // Rząd filtru FIR
 static constexpr int K = 512; // Ilość wątków w bloku
 
 __constant__ static float fir_coeff[N + 1];
 
 __global__
-static void audiofir_kernel(float *yout, const float *yin, int n)
+static void audiofir_kernel(float *yout, const float *yin)
 {
     assert(yout != nullptr);
     assert(yin != nullptr);
-	assert(n <= N);
 	assert(threadIdx.x < K);
 
 	__shared__ float ytile[N + K];
@@ -24,7 +23,8 @@ static void audiofir_kernel(float *yout, const float *yin, int n)
 
     // Copy data from input vector to shared memory (aka 'ytile')
     int i = y_pos; // Position in input vector
-    int j = n + threadIdx.x; // Position in tile
+    int j = N + threadIdx.x; // Position in tile
+    #pragma unroll
     while(j >= 0)
     {
         ytile[j] = yin[i];
@@ -39,8 +39,9 @@ static void audiofir_kernel(float *yout, const float *yin, int n)
     // Perform scalar multiply on fetched tile
     auto sum = 0.0f; // Scalar multiply sum
     int k = 0; // Position in coefficients
-    j = (n + threadIdx.x); // Position in tile
-    while(k <= n)
+    j = (N + threadIdx.x); // Position in tile
+    #pragma unroll
+    while(k <= N)
     {
         const auto ytile_elem = ytile[j];
         const auto coeff_elem = fir_coeff[k];
@@ -57,7 +58,7 @@ static void audiofir_kernel(float *yout, const float *yin, int n)
 void audiofir(float *yout, const float *yin,
     const float *coeff, int n, int len)
 {
-	assert(n <= N);
+	assert(n == N);
 
     checkCudaErrors(cudaSetDevice(0));
 
@@ -85,8 +86,8 @@ void audiofir(float *yout, const float *yin,
     checkCudaErrors(cudaEventCreate(&stop));
     checkCudaErrors(cudaEventRecord(start, 0));
 
-    audiofir_kernel<<<(len + K - 1) / K, K>>>(d_yout, d_yin + n, n);
-    audiofir_kernel<<<(len + K - 1) / K, K>>>(d_yout + len_1, d_yin + n + len_1 + n, n);
+    audiofir_kernel<<<(len + K - 1) / K, K>>>(d_yout, d_yin + n);
+    audiofir_kernel<<<(len + K - 1) / K, K>>>(d_yout + len_1, d_yin + n + len_1 + n);
     checkCudaErrors(cudaGetLastError());
 
     checkCudaErrors(cudaEventRecord(stop, 0));
