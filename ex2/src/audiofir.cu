@@ -20,16 +20,17 @@ static void audiofir_kernel(float *yout, const float *yin)
 
     // From where we start
     const int y_pos = (threadIdx.x + (blockIdx.x * blockDim.x));
+    yout += y_pos;
+    yin += y_pos;
 
     // Copy data from input vector to shared memory (aka 'ytile')
-    int i = y_pos; // Position in input vector
     int j = N + threadIdx.x; // Position in tile
     #pragma unroll
     while(j >= 0)
     {
-        ytile[j] = yin[i];
+        ytile[j] = *yin;
 
-        i -= K;
+        yin -= K;
         j -= K;
     }
 
@@ -43,16 +44,14 @@ static void audiofir_kernel(float *yout, const float *yin)
     #pragma unroll
     while(k <= N)
     {
-        const auto ytile_elem = ytile[j];
-        const auto coeff_elem = fir_coeff[k];
-        sum += (ytile_elem * coeff_elem);
+        sum += (ytile[j] * fir_coeff[k]);
 
         --j;
         ++k;
     }
 
     // Save calculated scalar
-    yout[y_pos] = sum;
+    *yout = sum;
 }
 
 void audiofir(float *yout, const float *yin,
@@ -61,6 +60,12 @@ void audiofir(float *yout, const float *yin,
 	assert(n == N);
 
     checkCudaErrors(cudaSetDevice(0));
+
+    int minGridSize; // określenie optymalnej konfiguracji
+    int blockSize;
+    checkCudaErrors(cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, audiofir_kernel, 0, 0));
+    printf("Quasi-optimal cfg.: >=%5d blocks of length %d\n", minGridSize, blockSize);
+    printf("Actual configuration: %3d blocks of length %d\n", (len + K - 1) / K, K);
 
     float* d_yout;
     float* d_yin;

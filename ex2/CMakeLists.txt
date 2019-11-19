@@ -20,3 +20,7 @@ target_include_directories(ex2
 configure_file(scripts/testfir.m testfir.m COPYONLY)
 configure_file(scripts/audiofir.m audiofir.m COPYONLY)
 
+target_compile_options(ex2
+    PRIVATE
+        $<$<COMPILE_LANGUAGE:CUDA>:--ptxas-options=-v>
+)
