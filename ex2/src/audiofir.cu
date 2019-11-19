@@ -4,7 +4,7 @@
 
 #include <helper_cuda.h>
 
-static constexpr int N = 1024; // maksymalny rząd filtru FIR 
+static constexpr int N = 1024; // maksymalny rząd filtru FIR
 static constexpr int K = 512; // Ilość wątków w bloku
 
 __constant__ static float fir_coeff[N + 1];
@@ -19,27 +19,39 @@ static void audiofir_kernel(float *yout, const float *yin, int n)
 
 	__shared__ float ytile[N + K];
 
-    const int i = threadIdx.x + blockIdx.x * blockDim.x;
-	for (int j = i; j >= (i - n); j -= K)
-	{
-		ytile[j] = yin[i];
-	}
+    // From where we start
+    const int y_pos = (threadIdx.x + (blockIdx.x * blockDim.x));
 
-
-
-	yin += i;
-	yout += i;
-
-	float* coeff = fir_coeff;
-    float sum = 0.0f;
-    for(int k = 0; k <= n; ++k)
+    // Copy data from input vector to shared memory (aka 'ytile')
+    int i = y_pos; // Position in input vector
+    int j = n + threadIdx.x; // Position in tile
+    while(j >= 0)
     {
-        const float yin_elem = *(yin--);
-        const float coeff_elem = *(coeff++);
-        sum += (yin_elem * coeff_elem);
+        ytile[j] = yin[i];
+
+        i -= K;
+        j -= K;
     }
 
-    *yout = sum;
+    // Wait for data copy end
+    __syncthreads();
+
+    // Perform scalar multiply on fetched tile
+    auto sum = 0.0f; // Scalar multiply sum
+    int k = 0; // Position in coefficients
+    j = (n + threadIdx.x); // Position in tile
+    while(k <= n)
+    {
+        const auto ytile_elem = ytile[j];
+        const auto coeff_elem = fir_coeff[k];
+        sum += (ytile_elem * coeff_elem);
+
+        --j;
+        ++k;
+    }
+
+    // Save calculated scalar
+    yout[y_pos] = sum;
 }
 
 void audiofir(float *yout, const float *yin,

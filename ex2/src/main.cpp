@@ -2,6 +2,9 @@
 #include <cstdio>
 #include <ctime>
 
+#include <chrono>
+#include <thread>
+
 #include "audiofir.hpp"
 
 void alloc_mem(int n, int len,
@@ -61,17 +64,27 @@ void audiocmp(float *yout, float *yref, int len)
 }
 
 #ifdef _WIN32
-#define WINDOWS_LEAN_AND_MEAN 
+#define WINDOWS_LEAN_AND_MEAN
 #include <windows.h>
 typedef LARGE_INTEGER app_timer_t;
 #define timer(t_ptr) QueryPerformanceCounter(t_ptr)
-void elapsed_time(app_timer_t start, app_timer_t stop, double flop) 
-{ 
-	double etime; 
-	LARGE_INTEGER clk_freq; 
-	QueryPerformanceFrequency(&clk_freq); 
-	etime = (stop.QuadPart - start.QuadPart) / (double)clk_freq.QuadPart; 
-	printf("CPU (total!) time = %.3f ms (%6.3f GFLOP/s)\n", etime * 1e3, 1e-9 * flop / etime); 
+void elapsed_time(app_timer_t start, app_timer_t stop, double flop)
+{
+	double etime;
+	LARGE_INTEGER clk_freq;
+	QueryPerformanceFrequency(&clk_freq);
+	etime = (stop.QuadPart - start.QuadPart) / (double)clk_freq.QuadPart;
+	printf("CPU (total!) time = %.3f ms (%6.3f GFLOP/s)\n", etime * 1e3, 1e-9 * flop / etime);
+}
+#else
+using app_timer_t = std::chrono::time_point<std::chrono::steady_clock>;
+#define timer(t_ptr) *t_ptr = std::chrono::steady_clock::now()
+void elapsed_time(app_timer_t start, app_timer_t stop, double flop)
+{
+    const auto diff = stop - start;
+    const auto diff_ms = std::chrono::duration_cast<std::chrono::milliseconds>(diff);
+    const auto diff_ms_count = diff_ms.count();
+    printf("CPU (total!) time = %ldms (%6.3f GFLOP/s)\n", diff_ms_count, flop/diff_ms_count);
 }
 #endif
 
