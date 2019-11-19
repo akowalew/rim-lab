@@ -17,3 +17,5 @@ target_include_directories(ex2_matmultran
     PRIVATE
         include
 )
+
+configure_file(scripts/matgen.m matgen.m COPYONLY)
