@@ -8,20 +8,6 @@
 ###############################################################################
 
 add_executable(ex3
-    src/main.cpp
+    src/main.cu
 )
 
-target_include_directories(ex3
-    PRIVATE
-        include
-)
-
-target_compile_options(ex3
-	PRIVATE
-		-fopenmp
-)
-
-target_link_libraries(ex3
-	PRIVATE
-		-fopenmp
-)

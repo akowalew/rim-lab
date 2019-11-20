@@ -1,4 +1,6 @@
-# define THRUST_DEVICE_SYSTEM THRUST_DEVICE_SYSTEM_OMP
+#include <cuda_runtime.h>
+#include <helper_cuda.h>
+
 #include <thrust/functional.h> // function objects & tools
 #include <thrust/random.h>
 #include <thrust/random/uniform_real_distribution.h>
@@ -99,9 +101,9 @@ int main()
 
 	const auto begin = thrust::counting_iterator<unsigned long long>(0);
 	const auto end = begin + (N - 1);
-	thrust::transform(begin, end, x.begin(), randuni(1234));
-	thrust::transform(begin, end, y.begin(), randuni(2345));
-	thrust::transform(begin, end, z.begin(), randuni(3456));
+	thrust::transform(begin, end, x.begin(), randuni(time(NULL) + 6969));
+	thrust::transform(begin, end, y.begin(), randuni(time(NULL) + 1234));
+	thrust::transform(begin, end, z.begin(), randuni(time(NULL) + 4321));
 	timer(&t2); //--------------------------------------------
 
 	// Numeric integral using Monte-Carlo algorithm
