@@ -7,5 +7,8 @@
 # Date: 20.11.2019 2:48 CEST
 ###############################################################################
 
+option(BUILD_EX3_MCINT "" ON)
+option(BUILD_EX3_RAINDEMO "" ON)
+
 add_subdirectory(mcint)
 add_subdirectory(raindemo)
