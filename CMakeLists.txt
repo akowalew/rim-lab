@@ -9,7 +9,17 @@
 ###############################################################################
 
 cmake_minimum_required(VERSION 3.10.0 FATAL_ERROR)
-project(rim-lab VERSION 0.1.0 LANGUAGES CXX CUDA)
+
+option(USE_CUDA "Whether to compile CUDA programs or not" ON)
+option(BUILD_EX1 "Whether to build excercise 1 or not" ON)
+option(BUILD_EX2 "Whether to build excercise 2 or not" ON)
+option(BUILD_EX3 "Whether to build excercise 3 or not" ON)
+
+project(rim-lab VERSION 0.1.0 LANGUAGES CXX)
+
+if(USE_CUDA)
+	enable_language(CUDA)
+endif()
 
 # Global definitions (same for all targets)
 set(CMAKE_CUDA_STANDARD 11)
@@ -19,10 +29,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CUDA_SEPARABLE_COMPILATION ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
 
-# Find needed dependencies
-find_package(OpenGL REQUIRED)
-find_package(GLUT REQUIRED)
-
 # Load external modules
 add_subdirectory(extern)
 
@@ -30,5 +36,14 @@ add_subdirectory(extern)
 link_libraries(cuda-samples)
 
 # Define applications
-add_subdirectory(ex1)
-add_subdirectory(ex2)
+if(BUILD_EX1)
+	add_subdirectory(ex1)
+endif()
+
+if(BUILD_EX2)
+	add_subdirectory(ex2)
+endif()
+
+if(BUILD_EX3)
+	add_subdirectory(ex3)
+endif()

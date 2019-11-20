@@ -7,6 +7,10 @@
 # Date: 5.11.2019 20:42 CEST
 ###############################################################################
 
+# Find needed dependencies
+find_package(OpenGL REQUIRED)
+find_package(GLUT REQUIRED)
+
 add_executable(ex1
     src/main.cpp
     src/fractals.cu
