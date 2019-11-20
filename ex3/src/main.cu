@@ -126,31 +126,18 @@ int main(int argc, char** argv)
 	thrust::device_vector<float> x(N);
 	thrust::device_vector<float> y(N);
 	thrust::device_vector<float> z(N);
+	thrust::device_vector<float> xyz(3 * N);
 	timer(&t1); //--------------------------------------------
 
-    curandGenerator_t x_gen;
-    curandGenerator_t y_gen;
-    curandGenerator_t z_gen;
+    curandGenerator_t xyz_gen;
+    curandCreateGenerator(&xyz_gen, CURAND_RNG_QUASI_DEFAULT);
+	curandSetQuasiRandomGeneratorDimensions(xyz_gen, 3);
+    curandGenerateUniform(xyz_gen, xyz.data().get(), xyz.size());
+	curandDestroyGenerator(xyz_gen);
 
-    curandCreateGenerator(&x_gen, CURAND_RNG_PSEUDO_DEFAULT);
-    curandCreateGenerator(&y_gen, CURAND_RNG_PSEUDO_DEFAULT);
-    curandCreateGenerator(&z_gen, CURAND_RNG_PSEUDO_DEFAULT);
-
-    curandSetPseudoRandomGeneratorSeed(x_gen, time(NULL) + 1234);
-    curandSetPseudoRandomGeneratorSeed(y_gen, 4321);
-    curandSetPseudoRandomGeneratorSeed(z_gen, 5678);
-
-    const auto x_data = x.data();
-    const auto y_data = y.data();
-    const auto z_data = z.data();
-
-    curandGenerateUniform(x_gen, x_data.get(), N);
-    curandGenerateUniform(y_gen, y_data.get(), N);
-    curandGenerateUniform(z_gen, z_data.get(), N);
-    
-    curandDestroyGenerator(x_gen);
-    curandDestroyGenerator(y_gen);
-    curandDestroyGenerator(z_gen);
+	thrust::copy(xyz.begin(), xyz.begin() + N, x.begin());
+	thrust::copy(xyz.begin() + N, xyz.begin() + 2 * N, y.begin());
+	thrust::copy(xyz.begin() + 2 * N, xyz.end(), z.begin());
 
     const auto uni = uniformAB(-1.0, 1.0);
     thrust::transform(x.begin(), x.end(), x.begin(), uni);
