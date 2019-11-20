@@ -1,11 +1,17 @@
 ###############################################################################
 # CMakeLists.txt
 #
-# Defines build structure for applications in excercise 3
+# Defines build structure for application `mcint`
 #
 # Author: akowalew (ram.techen@gmail.com)
-# Date: 20.11.2019 2:48 CEST
+# Date: 20.11.2019 00:50 CEST
 ###############################################################################
 
-add_subdirectory(mcint)
+add_executable(mcint
+    src/main.cu
+)
 
+target_link_libraries(mcint
+    PRIVATE
+        curand
+)
