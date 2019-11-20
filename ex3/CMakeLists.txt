@@ -11,3 +11,7 @@ add_executable(ex3
     src/main.cu
 )
 
+target_link_libraries(ex3
+    PRIVATE
+        curand
+)

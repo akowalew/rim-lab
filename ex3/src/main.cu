@@ -1,5 +1,6 @@
 #include <cuda_runtime.h>
 #include <helper_cuda.h>
+#include <curand.h>
 
 #include <thrust/functional.h> // function objects & tools
 #include <thrust/random.h>
@@ -71,6 +72,25 @@ public:
 	}
 };
 
+class uniformAB
+    :   public thrust::unary_function<float, float>
+{
+private:
+    float a, b;
+
+public:
+    uniformAB(float _a, float _b)
+        :   a(_a)
+        ,   b(_b)
+    {}
+
+    __host__ __device__
+    float operator()(float x) const
+    {
+        return x * (b - a) + a;
+    }
+};
+
 using point3D = thrust::tuple<float, float, float>;
 
 struct fun
@@ -99,11 +119,35 @@ int main()
 	thrust::device_vector<float> z(N);
 	timer(&t1); //--------------------------------------------
 
-	const auto begin = thrust::counting_iterator<unsigned long long>(0);
-	const auto end = begin + (N - 1);
-	thrust::transform(begin, end, x.begin(), randuni(time(NULL) + 6969));
-	thrust::transform(begin, end, y.begin(), randuni(time(NULL) + 1234));
-	thrust::transform(begin, end, z.begin(), randuni(time(NULL) + 4321));
+    curandGenerator_t x_gen;
+    curandGenerator_t y_gen;
+    curandGenerator_t z_gen;
+
+    curandCreateGenerator(&x_gen, CURAND_RNG_PSEUDO_DEFAULT);
+    curandCreateGenerator(&y_gen, CURAND_RNG_PSEUDO_DEFAULT);
+    curandCreateGenerator(&z_gen, CURAND_RNG_PSEUDO_DEFAULT);
+
+    curandSetPseudoRandomGeneratorSeed(x_gen, time(NULL) + 1234);
+    curandSetPseudoRandomGeneratorSeed(y_gen, 4321);
+    curandSetPseudoRandomGeneratorSeed(z_gen, 5678);
+
+    const auto x_data = x.data();
+    const auto y_data = y.data();
+    const auto z_data = z.data();
+
+    curandGenerateUniform(x_gen, x_data.get(), N);
+    curandGenerateUniform(y_gen, y_data.get(), N);
+    curandGenerateUniform(z_gen, z_data.get(), N);
+    
+    curandDestroyGenerator(x_gen);
+    curandDestroyGenerator(y_gen);
+    curandDestroyGenerator(z_gen);
+
+    const auto uni = uniformAB(-1.0, 1.0);
+    thrust::transform(x.begin(), x.end(), x.begin(), uni);
+    thrust::transform(y.begin(), y.end(), y.begin(), uni);
+    thrust::transform(z.begin(), z.end(), z.begin(), uni);
+
 	timer(&t2); //--------------------------------------------
 
 	// Numeric integral using Monte-Carlo algorithm
