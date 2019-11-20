@@ -9,3 +9,12 @@
 
 configure_file(scripts/raindemo.m raindemo.m COPYONLY)
 
+add_executable(raindemo
+	src/main.cpp
+	src/raindemo.cu
+)
+
+target_include_directories(raindemo
+	PRIVATE
+		include
+)
