@@ -1,3 +1,6 @@
 [submodule "extern/cuda-samples"]
 	path = extern/cuda-samples
 	url = https://github.com/NVIDIA/cuda-samples.git
+[submodule "extern/thrust"]
+	path = extern/thrust
+	url = https://github.com/thrust/thrust.git
