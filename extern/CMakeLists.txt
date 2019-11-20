@@ -10,4 +10,5 @@ add_library(thrust INTERFACE)
 target_include_directories(thrust
 	INTERFACE
 		${CMAKE_CURRENT_SOURCE_DIR}/thrust
+		${CMAKE_CURRENT_SOURCE_DIR}/thrust/dependencies/cub
 )

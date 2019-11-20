@@ -11,3 +11,13 @@ add_executable(ex3
     src/main.cu
 )
 
+target_include_directories(ex3
+    PRIVATE
+        include
+)
+
+target_link_libraries(ex3
+	PRIVATE
+		thrust
+)
+

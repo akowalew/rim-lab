@@ -27,7 +27,7 @@ set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CUDA_SEPARABLE_COMPILATION ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
 
 # Load external modules
 add_subdirectory(extern)
@@ -37,11 +37,11 @@ link_libraries(cuda-samples)
 
 # Define applications
 if(BUILD_EX1)
-	add_subdirectory(ex1)
+	#add_subdirectory(ex1)
 endif()
 
 if(BUILD_EX2)
-	add_subdirectory(ex2)
+	#add_subdirectory(ex2)
 endif()
 
 if(BUILD_EX3)

@@ -9,6 +9,8 @@
 #include <thrust/iterator/counting_iterator.h>
 #include <thrust/iterator/zip_iterator.h>
 
+#include <cstdlib>
+
 #ifdef _WIN32
 
 # define WINDOWS_LEAN_AND_MEAN
@@ -88,12 +90,19 @@ struct fun
 	}
 };
 
-int main()
+int main(int argc, char** argv)
 {
+	if (argc != 2)
+	{
+		printf("Usage: ex2 <N>\n");
+		return -1;
+	}
+
+	const auto N = atoi(argv[1]);
+
 	app_timer_t t0, t1, t2, t3;
 	timer(&t0); //--------------------------------------------
 
-	const auto N = 1000;
 	thrust::device_vector<float> x(N);
 	thrust::device_vector<float> y(N);
 	thrust::device_vector<float> z(N);
