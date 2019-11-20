@@ -93,57 +93,74 @@ public:
 
 using point3D = thrust::tuple<float, float, float>;
 
-struct fun
+class fun
 	: public thrust::unary_function<point3D, float>
 {
+private:
+	float a;
+	float R2;
+
+public:
+	fun(float a_, float R_)
+		:	a(a_)
+		,	R2(R_ * R_)
+	{}
+
 	__host__ __device__
 	float operator ()(const point3D &p) const
 	{
+		const auto z = thrust::get<2>(p);
+		if (z > a || z < -a)
+		{
+			return 0.0f;
+		}
+
 		const auto x = thrust::get<0>(p);
 		const auto y = thrust::get<1>(p);
-		const auto z = thrust::get<2>(p);
 		const auto sum = x*x + y*y + z*z;
+		if (sum > R2)
+		{
+			return 0.0f;
+		}
 
-		return (sum > 1) ? 0.0f : 1.0f;
+		return 1.0f;
 	}
 };
 
-int main()
+#include <cstdlib>
+
+int main(int argc, char** argv)
 {
+	if (argc != 2)
+	{
+		printf("Usage: ex2 <N>\n");
+		return -1;
+	}
+
+	const auto N = atoi(argv[1]);
+	const auto a = (16.0f / 10.0f);
+	const auto R = 5.0;
+
 	app_timer_t t0, t1, t2, t3;
 	timer(&t0); //--------------------------------------------
 
-	const auto N = 1000;
 	thrust::device_vector<float> x(N);
 	thrust::device_vector<float> y(N);
 	thrust::device_vector<float> z(N);
+	thrust::device_vector<float> xyz(3 * N);
 	timer(&t1); //--------------------------------------------
 
-    curandGenerator_t x_gen;
-    curandGenerator_t y_gen;
-    curandGenerator_t z_gen;
+    curandGenerator_t xyz_gen;
+    curandCreateGenerator(&xyz_gen, CURAND_RNG_QUASI_DEFAULT);
+	curandSetQuasiRandomGeneratorDimensions(xyz_gen, 3);
+    curandGenerateUniform(xyz_gen, xyz.data().get(), xyz.size());
+	curandDestroyGenerator(xyz_gen);
 
-    curandCreateGenerator(&x_gen, CURAND_RNG_PSEUDO_DEFAULT);
-    curandCreateGenerator(&y_gen, CURAND_RNG_PSEUDO_DEFAULT);
-    curandCreateGenerator(&z_gen, CURAND_RNG_PSEUDO_DEFAULT);
+	thrust::copy(xyz.begin(), xyz.begin() + N, x.begin());
+	thrust::copy(xyz.begin() + N, xyz.begin() + 2 * N, y.begin());
+	thrust::copy(xyz.begin() + 2 * N, xyz.end(), z.begin());
 
-    curandSetPseudoRandomGeneratorSeed(x_gen, time(NULL) + 1234);
-    curandSetPseudoRandomGeneratorSeed(y_gen, 4321);
-    curandSetPseudoRandomGeneratorSeed(z_gen, 5678);
-
-    const auto x_data = x.data();
-    const auto y_data = y.data();
-    const auto z_data = z.data();
-
-    curandGenerateUniform(x_gen, x_data.get(), N);
-    curandGenerateUniform(y_gen, y_data.get(), N);
-    curandGenerateUniform(z_gen, z_data.get(), N);
-    
-    curandDestroyGenerator(x_gen);
-    curandDestroyGenerator(y_gen);
-    curandDestroyGenerator(z_gen);
-
-    const auto uni = uniformAB(-1.0, 1.0);
+    const auto uni = uniformAB(-R, R);
     thrust::transform(x.begin(), x.end(), x.begin(), uni);
     thrust::transform(y.begin(), y.end(), y.begin(), uni);
     thrust::transform(z.begin(), z.end(), z.begin(), uni);
@@ -157,11 +174,14 @@ int main()
 	const auto zip_end_tuple = thrust::make_tuple(x.end(), y.end(), z.end());
 	const auto zip_end = thrust::make_zip_iterator(zip_end_tuple);
 
-	const auto sum = thrust::transform_reduce(zip_begin, zip_end, fun(), 0.0f, thrust::plus<float>());
-	const auto integral = (sum / N) * 8.0f;
+	auto fw = fun(a, R);
+	const auto sum = thrust::transform_reduce(zip_begin, zip_end, fw, 0.0f, thrust::plus<float>());
+	
+	const auto X3 = 8 * R * R * R;
+	const auto integral = (sum / N) * X3;
 	timer(&t3); //--------------------------------------------
 
-	std::cout << "pi = " << 0.75f * integral << '\n';
+	std::cout << "integral = " << integral << '\n';
 	std::cout << "Initialization: " << elapsed_time(t0, t1) << " ms" << '\n';
 	std::cout << "Generation: " << elapsed_time(t1, t2) << " ms" << '\n';
 	std::cout << "Integral: " << elapsed_time(t2, t3) << " ms" << '\n';
